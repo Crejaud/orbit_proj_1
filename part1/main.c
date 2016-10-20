@@ -8,11 +8,11 @@
 
 void bitonicSortSeq(int start, int length, int *arr, int flag);
 void bitonicSortPar(int start, int length, int *arr, int flag);
-void swap(int *a, int *b);
+void swap(int a[], int left, int right);
 void quickSortSeq(int *arr, int left, int right);
 void quickSortPar(int *arr, int left, int right);
 
-main()
+int main()
 {
 	int small, mid, large;
 	int range;
@@ -49,12 +49,12 @@ main()
 	printf("Before sorting: ");
 	for (i = 0; i < small; i++)
 		printf("%d ", arrSmall[i]);
-	//bitonicSortSeq(0, small, arrSmall, UP);
 	quickSortSeq(arrSmall, 0, small-1);
 	printf("\nAfter sorting: ");
 	for (i = 0; i < small; i++)
 		printf("%d ", arrSmall[i]);
 }
+
 
 void bitonicSortSeq(int start, int length, int *arr, int flag)
 {
@@ -74,22 +74,23 @@ void bitonicSortSeq(int start, int length, int *arr, int flag)
 	{
 		if (flag == UP)
 			if (arr[i] > arr[i + mid])
-				swap(&arr[i], &arr[i + mid]);
+				swap(arr, i, i + mid);
 		else
 			if (arr[i] < arr[i + mid])
-				swap(&arr[i], &arr[i + mid]);
+				swap(arr, i, i + mid);
 	}
 
 	bitonicSortSeq(start, mid, arr, flag);
 	bitonicSortSeq(start + mid, mid, arr, flag);
 }
 
+
 void bitonicSortPar(int start, int length, int *arr, int flag)
 {
 	int i, mid;
-	
+
 	if (length == 1) return;
-	
+
 	if (length % 2 != 0)
 	{
 		printf("error\n");
@@ -97,29 +98,30 @@ void bitonicSortPar(int start, int length, int *arr, int flag)
 	}
 
 	mid = length / 2;
-	
-	/* parallelize this using pthreads */
+
+	/* parallelize this using pthreads*/
 	for (i = start; i < start + mid; i++)
 	{
 		if (flag == UP)
 			if (arr[i] > arr[i + mid])
-				swap(&arr[i], &arr[i + mid]);
+				swap(arr, i, i + mid);
 		else
 			if (arr[i] < arr[i + mid])
-				swap(&arr[i], &arr[i + mid]);
+				swap(arr, i, i + mid);
 	}
 
 	bitonicSortPar(start, mid, arr, flag);
 	bitonicSortPar(start + mid, mid, arr, flag);
 }
 
-void swap(int *a, int *b)
+
+void swap (int a[], int left, int right)
 {
-	int temp;
-	temp = *a;
-	*a = *b;
-	*b = temp;
-}
+ int temp;
+ temp=a[left];
+ a[left]=a[right];
+ a[right]=temp;
+}//end swap
 
 void quickSortSeq(int *arr, int left, int right)
 {
@@ -132,22 +134,29 @@ void quickSortSeq(int *arr, int left, int right)
 	}
 }
 
-int partition(int *arr, int left, int right)
+int partition( int a[], int low, int high )
 {
-	int pivot, start, end;
-	pivot = arr[left];
-	start = left;
-	end = right + 1;
-	while(1)
-	{
-		do ++start; while (arr[start] <= pivot && start <= right);
-		do --end; while (arr[end] > pivot);
-		if (start >= end) break;
-		swap(&arr[start], &arr[end]);
-	}
-	swap(&arr[start], &arr[end]);
-	return end;
-}
+ int left, right;
+ int pivot_item;
+ int pivot = left = low;
+ pivot_item = a[low];
+ right = high;
+ while ( left < right )
+ {
+  // Move left while item < pivot
+  while( a[left] <= pivot_item )
+   left++;
+  // Move right while item > pivot
+  while( a[right] > pivot_item )
+   right--;
+  if ( left < right )
+   swap(a,left,right);
+ }
+ // right is final position for the pivot
+ a[low] = a[right];
+ a[right] = pivot_item;
+ return right;
+}//end partition
 
 void quickSortPar(int *arr, int left, int right)
 {
