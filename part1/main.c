@@ -2,6 +2,7 @@
 #include <stdlib.h>
 #include <pthread.h>
 #include <time.h>
+#include <string.h>
 
 #define MAX(A,B) ((A > B) ? A : B)
 #define MIN(A,B) ((A > B) ? B : A)
@@ -33,9 +34,9 @@ int main()
 	double initTime;
 
 	/* pwrs of 2 */
-	small = 16;
-	mid = 25;
-	large = 36;
+	small = 1000;
+	mid = 10000;
+	large = 100000;
 
 	range = 1000000;
 
@@ -187,29 +188,28 @@ void quickSortSeq(int *arr, int left, int right)
 	}
 }
 
-int partition( int a[], int low, int high )
+int partition(int arr[], int left, int right)
 {
- int left, right;
- int pivot_item;
- int pivot = left = low;
- pivot_item = a[low];
- right = high;
- while ( left < right )
- {
-  // Move left while item < pivot
-  while( a[left] <= pivot_item )
-   left++;
-  // Move right while item > pivot
-  while( a[right] > pivot_item )
-   right--;
-  if ( left < right )
-   swap(a,left,right);
- }
- // right is final position for the pivot
- a[low] = a[right];
- a[right] = pivot_item;
- return right;
-}//end partition
+	int leftPointer = left - 1;
+	int rightPointer = right;
+	int pivot = arr[right];
+
+	while(1)
+	{
+		while(arr[++leftPointer] < pivot) {}
+		while(rightPointer > 0 && arr[--rightPointer] > pivot) {}
+
+		if (leftPointer >= rightPointer)
+		{
+			break;
+		} else {
+			swap(arr, leftPointer, rightPointer);
+		}
+	}
+
+	swap(arr, leftPointer, right);
+	return leftPointer;
+}
 
 
 void quickSortPar(int *arr, int left, int right, int num_threads)
@@ -218,18 +218,29 @@ void quickSortPar(int *arr, int left, int right, int num_threads)
 	pthread_t ptl, ptr;
 	if (left < right)
 	{
-		if (isLarge) {
-			printf("doing partition\n");
-		}
 		mid = partition(arr, left, right);
-		struct partition_arg l = {left, mid - 1, arr, num_threads};
-		struct partition_arg r = {mid + 1, right, arr, num_threads};
-		if (thread_counter < num_threads) {
-			printf("start creating\n");
-			pthread_create(&ptl, NULL, (void *)qsort_thread_function, &l);
-			printf("stop creating 1\n");
-			pthread_create(&ptr, NULL, (void *)qsort_thread_function, &r);
-			printf("stop creating 2\n");
+		if (thread_counter < num_threads) {	
+			struct partition_arg* l = (struct partition_arg *) malloc(sizeof(struct partition_arg));
+			l->left = left;
+			l->right = mid - 1;
+			l->arr = arr;
+			l->num_threads = num_threads;
+			struct partition_arg* r = (struct partition_arg *) malloc(sizeof(struct partition_arg));
+			r->left = mid + 1;
+			r->right = right;
+			r->arr = arr;
+			r->num_threads = num_threads;
+			//printf("start creating\n");
+			pthread_create(&ptl, NULL, (void *)qsort_thread_function, l);
+			//printf("stop creating 1\n");
+			pthread_create(&ptr, NULL, (void *)qsort_thread_function, r);
+			//printf("stop creating 2\n");
+
+			pthread_join(ptl, NULL);
+			pthread_join(ptr, NULL);
+
+			free(l);
+			free(r);
 		} else {
 			quickSortPar(arr, left, mid - 1, num_threads);
 			quickSortPar(arr, mid + 1, right, num_threads);
@@ -242,4 +253,5 @@ void qsort_thread_function(void *args) {
 	thread_counter++;
 	struct partition_arg *pa = args;
 	quickSortPar(pa->arr, pa->left, pa->right, pa->num_threads);
+	pthread_exit(NULL);
 }
