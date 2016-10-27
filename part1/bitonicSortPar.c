@@ -1,76 +1,74 @@
 //Bitonic Sort
-//For data sizes of powers of 2
+//For dataBP sizeBPs of powers of 2
 
 #include <stdio.h>
 #include <stdlib.h>
 #include <time.h>
 #include <pthread.h>
 
-int numThreads;
-int maxThreads;
+int numThreadsBP;
+int maxThreadsBP;
 
-struct threadStruct{
-	int startIndex;
-	int size;
-	int* data;
-	int dir;
+struct threadStructP{
+	int startIndexBP;
+	int sizeBP;
+	int* dataBP;
+	int dirBP;
 };
 
-void print(int* data, int startIndex, int size);
-
-void merge(int* data, int startIndex, int size, int dir){
-	if(size==1){return;}
+void mergeBP(int* dataBP, int startIndexBP, int sizeBP, int dirBP){
+	if(sizeBP==1){return;}
 	else{
 		//compare the first half's [i] to the second halfs [i]
 		int y;
-		for(y=0; y<size/2; ++y){
-			//if swap the pair into the order indicated by dir
-			if((data[startIndex+y]>data[startIndex+(size/2)+y] && dir==1)||(data[startIndex+y]<data[startIndex+(size/2)+y] && dir==0)){
-				int temp=data[startIndex+y];
-				data[startIndex+y]=data[startIndex+(size/2)+y];
-				data[startIndex+(size/2)+y]=temp;
+		for(y=0; y<sizeBP/2; ++y){
+			//if swap the pair into the order indicated by dirBP
+			if((dataBP[startIndexBP+y]>dataBP[startIndexBP+(sizeBP/2)+y] && dirBP==1)||(dataBP[startIndexBP+y]<dataBP[startIndexBP+(sizeBP/2)+y] && dirBP==0)){
+				int temp=dataBP[startIndexBP+y];
+				dataBP[startIndexBP+y]=dataBP[startIndexBP+(sizeBP/2)+y];
+				dataBP[startIndexBP+(sizeBP/2)+y]=temp;
 			}
 
 		}
 	
-//	print(data, 0, 16);
+//	print(dataBP, 0, 16);
 	//reorder subsets
-	merge(data, startIndex, size/2, dir);
-	merge(data, startIndex+(size/2), size/2, dir);
+	mergeBP(dataBP, startIndexBP, sizeBP/2, dirBP);
+	mergeBP(dataBP, startIndexBP+(sizeBP/2), sizeBP/2, dirBP);
 	}
 	return;
 }
 
-void* parallelSort(void* derefStruct);
+void* parallelSortBP(void* derefStruct);
 
-//make dir true when calling initially
-void bitonicSort(int* data, int startIndex, int size, int dir){
+//make dirBP true when calling initially
+void bitonicSortBP(int* dataBP, int startIndexBP, int sizeBP, int dirBP){
 
 
 	//standard
-	if(size==1){return;}
+	if(sizeBP==1){return;}
 	//parallel
-	else if(numThreads<maxThreads){
+	else if(numThreadsBP<maxThreadsBP){
 		pthread_t threadL, threadH;
-		struct threadStruct* lower = (struct threadStruct *) malloc(sizeof(struct threadStruct));
-		lower->startIndex=startIndex;
-		lower->size=size/2;
-		lower->data=data;
-		lower->dir=dir;
+		struct threadStructP* lower = (struct threadStructP *) malloc(sizeof(struct threadStructP));
+		lower->startIndexBP=startIndexBP;
+		lower->sizeBP=sizeBP/2;
+		lower->dataBP=dataBP;
+		lower->dirBP=dirBP;
 
-		struct threadStruct* upper = (struct threadStruct *) malloc(sizeof(struct threadStruct));
-		upper->startIndex=startIndex+(size/2);
-		upper->size=size/2;
-		upper->data=data;
-		if(dir==1){
-			upper->dir=0;
+		struct threadStructP* upper = (struct threadStructP *) malloc(sizeof(struct threadStructP));
+		upper->startIndexBP=startIndexBP+(sizeBP/2);
+		upper->sizeBP=sizeBP/2;
+		upper->dataBP=dataBP;
+		if(dirBP==1){
+			upper->dirBP=0;
 		}
 		else{
-			upper->dir=1;
+			upper->dirBP=1;
 		}
 
- 		pthread_create(&threadL, NULL, parallelSort, lower);
- 		pthread_create(&threadH, NULL, parallelSort, upper);
+ 		pthread_create(&threadL, NULL, parallelSortBP, lower);
+ 		pthread_create(&threadH, NULL, parallelSortBP, upper);
 
 		pthread_join(threadL, NULL);
 		pthread_join(threadH, NULL);
@@ -80,57 +78,59 @@ void bitonicSort(int* data, int startIndex, int size, int dir){
 	//non parallel
 	else{
 		//divide into sub arrays
-		bitonicSort(data, startIndex, size/2, dir);
-		//note direction switches to maintain bitonic ordering
-		if(dir==1){
-			bitonicSort(data, startIndex+(size/2), size/2, 0);
+		bitonicSortBP(dataBP, startIndexBP, sizeBP/2, dirBP);
+		//note dirBPection switches to maintain bitonic ordering
+		if(dirBP==1){
+			bitonicSortBP(dataBP, startIndexBP+(sizeBP/2), sizeBP/2, 0);
 		}
 		else{
-			bitonicSort(data, startIndex+(size/2), size/2, 1);
+			bitonicSortBP(dataBP, startIndexBP+(sizeBP/2), sizeBP/2, 1);
 		}
 		//once we have reached 1 element pairs, start merging them
 	}
-	merge(data, startIndex, size, dir);
+	mergeBP(dataBP, startIndexBP, sizeBP, dirBP);
 	return;
 }
 
-void* parallelSort(void* derefStruct){
-		++numThreads;
-		struct threadStruct* tStruct = derefStruct;
-		bitonicSort(tStruct->data, tStruct->startIndex, tStruct->size, tStruct->dir);
+void* parallelSortBP(void* derefStruct){
+		++numThreadsBP;
+		struct threadStructP* tStruct = derefStruct;
+		bitonicSortBP(tStruct->dataBP, tStruct->startIndexBP, tStruct->sizeBP, tStruct->dirBP);
 		pthread_exit(NULL);
 	return NULL;
 }
 
+void callerBP(int n, int* dataBP, int threads){
+	//set sizeBP and initialize
 
-//print array
-void print(int* data, int startIndex, int size){
-	int i;
-	for(i=0;i<size;++i){
-		printf("%d ", data[startIndex+i]);
-	}
-	printf("\n");
-	return;
+	numThreadsBP=0;
+	maxThreadsBP=threads;
+
+	//printing and sortingg
+
+	bitonicSortBP(dataBP, 0, n, 1);
 }
 
 int main(){
-	//set size and initialize
+//set sizeBP and initialize
 	int N=16;
-	int data[N];
-
-	numThreads=0;
-	maxThreads=4;
+	int d[N];
+	int threads=4;
 
 	//seed and set random values
 	time_t t;
 	srand((unsigned) time(&t));
 	int j;
 	for(j=0; j<N; ++j){
-		data[j]=(rand()%100);
+		d[j]=(rand()%100);
 	}
 	
 	//printing and sortingg
-	print(data, 0, N);
-	bitonicSort(data, 0, N, 1);
-	print(data, 0, N);
+	callerBP(N, d, threads);
+
+	int i;
+	for(i=0;i<N;++i){
+		printf("%d ", d[i]);
+	}
+	printf("\n");
 }

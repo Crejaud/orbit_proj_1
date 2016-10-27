@@ -1,75 +1,74 @@
 //Bitonic Sort
-//For data sizes of powers of 2
+//For dataSB sizeSBs of powers of 2
 
 #include <stdio.h>
 #include <stdlib.h>
 #include <time.h>
 
-void merge(int* data, int startIndex, int size, int dir){
-	if(size==1){return;}
+void mergeSB(int* dataSB, int startIndexSB, int sizeSB, int dirSB){
+	if(sizeSB==1){return;}
 	else{
 		//compare the first half's [i] to the second halfs [i]
 		int i;
-		for(i=0; i<size/2; ++i){
-			//if swap the pair into the order indicated by dir
-			if((data[startIndex+i]>data[startIndex+(size/2)+i] && dir==1)||(data[startIndex+i]<data[startIndex+(size/2)+i] && dir==0)){
-				int temp=data[startIndex+i];
-				data[startIndex+i]=data[startIndex+(size/2)+i];
-				data[startIndex+(size/2)+i]=temp;
+		for(i=0; i<sizeSB/2; ++i){
+			//if swap the pair into the order indicated by dirSB
+			if((dataSB[startIndexSB+i]>dataSB[startIndexSB+(sizeSB/2)+i] && dirSB==1)||(dataSB[startIndexSB+i]<dataSB[startIndexSB+(sizeSB/2)+i] && dirSB==0)){
+				int temp=dataSB[startIndexSB+i];
+				dataSB[startIndexSB+i]=dataSB[startIndexSB+(sizeSB/2)+i];
+				dataSB[startIndexSB+(sizeSB/2)+i]=temp;
 			}
 
 		}
 	//reorder subsets
-	merge(data, startIndex, size/2, dir);
-	merge(data, startIndex+(size/2), size/2, dir);
+	mergeSB(dataSB, startIndexSB, sizeSB/2, dirSB);
+	mergeSB(dataSB, startIndexSB+(sizeSB/2), sizeSB/2, dirSB);
 	}
 	return;
 }
 
-//make dir true when calling initially
-void bitonicSort(int* data, int startIndex, int size, int dir){
-	if(size==1){return;}
+//make dirSB true when calling initially
+void bitonicSortSB(int* dataSB, int startIndexSB, int sizeSB, int dirSB){
+	if(sizeSB==1){return;}
 	else{
 		//divide into sub arrays
-		bitonicSort(data, startIndex, size/2, dir);
-		//note direction switches to maintain bitonic ordering
-		if(dir==1){
-			bitonicSort(data, startIndex+(size/2), size/2, 0);
+		bitonicSortSB(dataSB, startIndexSB, sizeSB/2, dirSB);
+		//note dirSBection switches to maintain bitonic ordering
+		if(dirSB==1){
+			bitonicSortSB(dataSB, startIndexSB+(sizeSB/2), sizeSB/2, 0);
 		}
 		else{
-			bitonicSort(data, startIndex+(size/2), size/2, 1);
+			bitonicSortSB(dataSB, startIndexSB+(sizeSB/2), sizeSB/2, 1);
 		}
 		//once we have reached 1 element pairs, start merging them
-		merge(data, startIndex, size, dir);
+		mergeSB(dataSB, startIndexSB, sizeSB, dirSB);
 	}
 	return;
 }
 
-//print array
-void print(int* data, int startIndex, int size){
-	int r;
-	for(r=0;r<size;++r){
-		printf("%d ", data[startIndex+r]);
-	}
-	printf("\n");
-	return;
+int callerSB(int sizeSB, int* dataSB){
+	bitonicSortSB(dataSB, 0, sizeSB, 1);
 }
 
 int main(){
-	//set size and initialize
-	int N=8;
-	int data[N];
+//set sizeBP and initialize
+	int N=16;
+	int d[N];
+	int threads=4;
 
 	//seed and set random values
 	time_t t;
 	srand((unsigned) time(&t));
 	int j;
 	for(j=0; j<N; ++j){
-		data[j]=(rand()%30);
+		d[j]=(rand()%100);
 	}
 	
 	//printing and sortingg
-	print(data, 0, N);
-	bitonicSort(data, 0, N, 1);
-	print(data, 0, N);
+	callerSB(N, d);
+
+	int i;
+	for(i=0;i<N;++i){
+		printf("%d ", d[i]);
+	}
+	printf("\n");
 }
