@@ -1,4 +1,8 @@
 main.c contains the code for part 1. gauss.c contains the code for part 2.
 
 To compile each, use gcc FILENAME.c -o OUTPUTEXECUTABLE -lpthread
+
+In main.c, the bitonic fuctions must be called with arrays that have size 2^n.
+In gauss.c, the global int n specifies the number of matricies, but should not go below 4.
+
 To run, simply ./OUTPUTEXECUTABLE
