@@ -3,6 +3,8 @@
 #include <pthread.h>
 #include <time.h>
 #include <string.h>
+#include "bitonicSortSerial.h"
+#include "bitonicSortParallel.h"
 
 #define MAX(A,B) ((A > B) ? A : B)
 #define MIN(A,B) ((A > B) ? B : A)
