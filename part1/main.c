@@ -377,4 +377,93 @@ int main()
 	for (i = 0; i < small; i++)
 		printf("%d ", arrSmall[i]);
 
+	//BITONIC SORT TIMING
+
+
+	int sm[1024];
+	int md[16384];
+	int lg[131072];
+	for (i = 0; i < 1024; i++)
+		sm[i] = rand() % range;
+
+	for (i = 0; i < 16384; i++)
+		md[i] = rand() % range;
+
+	for (i = 0; i < 131072; i++)
+		lg[i] = rand() % range;
+
+	int smt[1024];
+	int mdt[16384];
+	int lgt[131072];
+
+	int smy[1024];
+	int mdy[16384];
+	int lgy[131072];
+
+	
+	for(i=0; i<1024;++i){
+		smt[i]=sm[i];
+		smy[i]=sm[i];
+	}
+	for(i=0; i<16384;++i){
+		smt[i]=sm[i];
+		smy[i]=sm[i];
+	}
+	for(i=0; i<131072;++i){
+		smt[i]=sm[i];
+		smy[i]=sm[i];
+	}
+	begin = clock();
+	callerSB(1024, sm);
+	end = clock();
+	timeSpent = (double) (end - begin) / CLOCKS_PER_SEC;
+	printf("\n-----BITONIC SORT SERIAL-----\ntime spent on small: %f\n", timeSpent);
+
+	begin = clock();
+	callerSB(16384, md);
+	end = clock();
+	timeSpent = (double) (end - begin) / CLOCKS_PER_SEC;
+	printf("time spent on medium: %f\n", timeSpent);
+
+	begin = clock();
+	callerSB(131072, lg);
+	end = clock();
+	timeSpent = (double) (end - begin) / CLOCKS_PER_SEC;
+	printf("time spent on large: %f\n", timeSpent);
+
+	begin = clock();
+	callerBP(1024, smt, 4);
+	end = clock();
+	timeSpent = (double) (end - begin) / CLOCKS_PER_SEC;
+	printf("\n-----BITONIC SORT PARALLEL-----\n4 threads: time spent on small: %f\n", timeSpent);
+
+	begin = clock();
+	callerBP(16384, mdt, 4);
+	end = clock();
+	timeSpent = (double) (end - begin) / CLOCKS_PER_SEC;
+	printf("4 threads: time spent on medium: %f\n", timeSpent);
+
+	begin = clock();
+	callerBP(131072, lgt, 4);
+	end = clock();
+	timeSpent = (double) (end - begin) / CLOCKS_PER_SEC;
+	printf("4 threads: time spent on medium: %f\n", timeSpent);
+
+	begin = clock();
+	callerBP(1024, smy, 100);
+	end = clock();
+	timeSpent = (double) (end - begin) / CLOCKS_PER_SEC;
+	printf("\n100 threads: time spent on small: %f\n", timeSpent);
+
+	begin = clock();
+	callerBP(16384, mdy, 100);
+	end = clock();
+	timeSpent = (double) (end - begin) / CLOCKS_PER_SEC;
+	printf("100 threads: time spent on medium: %f\n", timeSpent);
+
+	begin = clock();
+	callerBP(131072, lgy, 100);
+	end = clock();
+	timeSpent = (double) (end - begin) / CLOCKS_PER_SEC;
+	printf("100 threads: time spent on medium: %f\n", timeSpent);
 }
