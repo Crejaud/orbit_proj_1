@@ -7,7 +7,7 @@
 void gaussian_elimination(double **A, double *B, int n, int num_threads);
 void gaussian_thread_function(void *args);
 void gaussian_reduce(double **A, double *B, int n, int i);
-void gauss_seq(double **A, double *B, int n);
+double* gauss_seq(double **A, double *B, int n);
 
 struct gauss_arg {
 	double **A;
@@ -51,7 +51,7 @@ int main()
 		printf("%f\n", B[i]);
 	}
 	
-	gaussian_elimination(A, B, n, 10);
+	double *y = gauss_seq(A, B, n);
 
 	/* print A first */
 	printf("A\n");
@@ -69,33 +69,49 @@ int main()
 	{
 		printf("%f\n", B[i]);
 	}
+
+	printf("y\n");
+	for (i = 0; i < n; i++)
+	{
+		printf("%f\n", y[i]);
+	}
 	/* call gaussian_elmination */
 	//gaussian_elimination(A, B, n, 2);
 }
 
-void gauss_seq(double **A, double *B, int n)
+double* gauss_seq(double **A, double *B, int n)
 {
 	int i, j, k;
-	double ratio;
-	for (i = 0; i < n-1; i++)
+	for (i = 0; i < n; i++)
 	{
-		for (j = i+1; j < n; j++)
+		for (j = i + 1; j < n; j++)
 		{
-			ratio = A[j][i]/A[i][i];
-			printf("ratio of %f/%f is %f\n", A[j][i], A[i][i], ratio);
-			for (k = i+1; k < n; k++)
+			printf("1");
+			A[i][j] = A[i][j]/A[i][i];
+			for (k = i + 1; k < n; k++)
 			{
-				A[j][k] -= (ratio * A[i][k]);
-				printf("new A[j][k] is %f\n", A[j][k]);
-				B[j] -= (ratio * B[i]);
-				printf("new B[j] is %f\n", B[j]);
+				printf("2");
+				A[k][j] -= A[k][i]*A[i][j];
 			}
 		}
 	}
+	double *y = (double *) malloc(n * sizeof(double));
+	for (k = 0; k < n; k++)
+	{
+		y[k] = B[k]/A[k][k];
+		A[k][k] = 1;
+		for (i = k + 1; i < n; i++)
+		{
+			B[i] -= A[i][k]*y[k];
+			A[i][k] = 0;
+		}
+	}
+	return y;
 }
 
 void gaussian_elimination(double **A, double *B, int n, int num_threads)
 {
+	printf("3");
 	int i;
 	int thread_counter = 0;
 	printf("3");
@@ -126,7 +142,6 @@ void gaussian_elimination(double **A, double *B, int n, int num_threads)
 	for (i = 0; i < n ; i++)
 	{
 		pthread_join(threads[i], NULL);
-		free(&threads[i]);
 	}
 }
 
