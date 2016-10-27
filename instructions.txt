@@ -1,0 +1,4 @@
+main.c contains the code for part 1. gauss.c contains the code for part 2.
+
+To compile each, use gcc FILENAME.c -o OUTPUTEXECUTABLE -lpthread
+To run, simply ./OUTPUTEXECUTABLE
