@@ -2,6 +2,7 @@
 #include <stdlib.h>
 #include <pthread.h>
 #include <time.h>
+#include <string.h>
 
 #define MAX(A,B) ((A > B) ? A : B)
 #define MIN(A,B) ((A > B) ? B : A)
@@ -15,7 +16,6 @@ void quickSortSeq(int *arr, int left, int right);
 void quickSortPar(int *arr, int left, int right, int num_threads);
 void qsort_thread_function(void *args);
 int thread_counter = 0;
-int isLarge = 0;
 
 struct partition_arg {
 	int left;
@@ -29,23 +29,26 @@ int main()
 {
 	int small, mid, large;
 	int range;
+	int i;
 	double startTime, endTime;
 	double initTime;
+	clock_t begin, end;
+	int *arrSmall, *arrMid, *arrLarge;
+	int *copySmall, *copyMid, *copyLarge;
+	double timeSpent;
 
 	/* pwrs of 2 */
-	small = 16;
-	mid = 25;
-	large = 36;
+	small = 100;
+	mid = 10000;
+	large = 100000;
 
 	range = 1000000;
 
 	initTime = 0.0;
 
-	int *arrSmall = (int *) malloc(small * sizeof(int));
-	int *arrMid = (int *) malloc(mid * sizeof(int));
-	int *arrLarge = (int *) malloc(large * sizeof(int));
-
-	int i;
+	arrSmall = (int *) malloc(small * sizeof(int));
+	arrMid = (int *) malloc(mid * sizeof(int));
+	arrLarge = (int *) malloc(large * sizeof(int));
 
 	/* Initialize arrays with random integers from 0 to (range-1)  */
 	for (i = 0; i < small; i++)
@@ -57,54 +60,68 @@ int main()
 	for (i = 0; i < large; i++)
 		arrLarge[i] = rand() % range;
 
-	printf("beginning tests\n");
 	/* start recording */
 	for (i = 4; i < 10000; i *= 4) {
-		printf("begin\n");
-		printf("num of threads: %d\n", i);
-		printf("end\n");
-		int *copySmall = malloc(small * sizeof(int));
+		copySmall = (int *) malloc(small * sizeof(int));
 		memcpy(copySmall, arrSmall, small * sizeof(int));
-
-
-		//printf("Before sorting: ");
-		//for (i = 0; i < 0; i++)
-		//	printf("%d ", copy[i]);
 		printf("Sorting Small...\n");
-		clock_t begin = clock();
+		begin = clock();
 		quickSortPar(copySmall, 0, small-1, i);
-		clock_t end = clock();
-		double time_spent_small = (double)(end - begin) / CLOCKS_PER_SEC;
+		end = clock();
+		timeSpent = (double)(end - begin) / CLOCKS_PER_SEC;
 		free(copySmall);
-		printf("\ntime spent on small: %f, threads: %d\n", time_spent_small, i);
+		printf("time spent on small: %f, threads: %d\n", timeSpent, i);
 		thread_counter = 0;
-		int *copyMid = malloc(mid * sizeof(int));
-		memcpy(copyMid, arrMid, mid * sizeof(int));
 
+		int j;
+		for (j = 0; j < small; j++)
+			printf("%d ", copySmall[j]);
+
+		printf("\n");
+
+		copyMid = (int *) malloc(mid * sizeof(int));
+		memcpy(copyMid, arrMid, mid * sizeof(int));
 		printf("Sorting Mid...\n");
 		begin = clock();
 		quickSortPar(copyMid, 0, mid-1, i);
 		end = clock();
-		double time_spent_mid = (double)(end - begin) / CLOCKS_PER_SEC;
+		timeSpent = (double)(end - begin) / CLOCKS_PER_SEC;
 		free(copyMid);
-		printf("\ntime spent on mid: %f, threads: %d\n", time_spent_mid, i);
+		printf("time spent on mid: %f, threads: %d\n", timeSpent, i);
 		thread_counter = 0;
-		int *copyLarge = malloc(large * sizeof(int));
-		memcpy(copyLarge, arrLarge, large * sizeof(int));
 
-		isLarge = 1;
+		copyLarge = (int *) malloc(large * sizeof(int));
+		memcpy(copyLarge, arrLarge, large * sizeof(int));
 		printf("Sorting Large...\n");
 		begin = clock();
 		quickSortPar(copyLarge, 0, large-1, i);
 		end = clock();
-		double time_spent_large = (double)(end - begin) / CLOCKS_PER_SEC;
+		timeSpent = (double)(end - begin) / CLOCKS_PER_SEC;
 		free(copyLarge);
-		printf("\ntime spent on large: %f, threads: %d\n", time_spent_large, i);
+		printf("time spent on large: %f, threads: %d\n", timeSpent, i);
 		thread_counter = 0;
 	}
 
+	begin = clock();
+	quickSortSeq(arrSmall, 0, small-1);
+	end = clock();
+	timeSpent = (double) (end - begin) / CLOCKS_PER_SEC;
+	printf("time spent on small: %f\n", timeSpent);
 
+	begin = clock();
+	quickSortSeq(arrMid, 0, mid-1);
+	end = clock();
+	timeSpent = (double) (end - begin) / CLOCKS_PER_SEC;
+	printf("time spent on mid: %f\n", timeSpent);
+	
+	begin = clock();
+	quickSortSeq(arrLarge, 0, large-1);
+	end = clock();
+	timeSpent = (double) (end - begin) / CLOCKS_PER_SEC;
+	printf("time spent on large: %f\n", timeSpent);
 
+	for (i = 0; i < small; i++)
+		printf("%d ", arrSmall[i]);
 
 }
 
@@ -187,29 +204,28 @@ void quickSortSeq(int *arr, int left, int right)
 	}
 }
 
-int partition( int a[], int low, int high )
+int partition(int arr[], int left, int right)
 {
- int left, right;
- int pivot_item;
- int pivot = left = low;
- pivot_item = a[low];
- right = high;
- while ( left < right )
- {
-  // Move left while item < pivot
-  while( a[left] <= pivot_item )
-   left++;
-  // Move right while item > pivot
-  while( a[right] > pivot_item )
-   right--;
-  if ( left < right )
-   swap(a,left,right);
- }
- // right is final position for the pivot
- a[low] = a[right];
- a[right] = pivot_item;
- return right;
-}//end partition
+	int leftPointer = left - 1;
+	int rightPointer = right;
+	int pivot = arr[right];
+
+	while(1)
+	{
+		while(arr[++leftPointer] < pivot) {}
+		while(rightPointer > 0 && arr[--rightPointer] > pivot) {}
+
+		if (leftPointer >= rightPointer)
+		{
+			break;
+		} else {
+			swap(arr, leftPointer, rightPointer);
+		}
+	}
+
+	swap(arr, leftPointer, right);
+	return leftPointer;
+}
 
 
 void quickSortPar(int *arr, int left, int right, int num_threads)
@@ -218,18 +234,29 @@ void quickSortPar(int *arr, int left, int right, int num_threads)
 	pthread_t ptl, ptr;
 	if (left < right)
 	{
-		if (isLarge) {
-			printf("doing partition\n");
-		}
 		mid = partition(arr, left, right);
-		struct partition_arg l = {left, mid - 1, arr, num_threads};
-		struct partition_arg r = {mid + 1, right, arr, num_threads};
-		if (thread_counter < num_threads) {
-			printf("start creating\n");
-			pthread_create(&ptl, NULL, (void *)qsort_thread_function, &l);
-			printf("stop creating 1\n");
-			pthread_create(&ptr, NULL, (void *)qsort_thread_function, &r);
-			printf("stop creating 2\n");
+		if (thread_counter < num_threads) {	
+			struct partition_arg* l = (struct partition_arg *) malloc(sizeof(struct partition_arg));
+			l->left = left;
+			l->right = mid - 1;
+			l->arr = arr;
+			l->num_threads = num_threads;
+			struct partition_arg* r = (struct partition_arg *) malloc(sizeof(struct partition_arg));
+			r->left = mid + 1;
+			r->right = right;
+			r->arr = arr;
+			r->num_threads = num_threads;
+			//printf("start creating\n");
+			pthread_create(&ptl, NULL, (void *)qsort_thread_function, l);
+			//printf("stop creating 1\n");
+			pthread_create(&ptr, NULL, (void *)qsort_thread_function, r);
+			//printf("stop creating 2\n");
+
+			pthread_join(ptl, NULL);
+			pthread_join(ptr, NULL);
+
+			free(l);
+			free(r);
 		} else {
 			quickSortPar(arr, left, mid - 1, num_threads);
 			quickSortPar(arr, mid + 1, right, num_threads);
@@ -242,4 +269,5 @@ void qsort_thread_function(void *args) {
 	thread_counter++;
 	struct partition_arg *pa = args;
 	quickSortPar(pa->arr, pa->left, pa->right, pa->num_threads);
+	pthread_exit(NULL);
 }
