@@ -4,33 +4,36 @@
 #include <time.h>
 #include <string.h>
 
-void gaussian_elimination(double **A, double *B, int n, int num_threads);
+void gaussian_elimination(int num_threads);
 void gaussian_thread_function(void *args);
-void gaussian_reduce(double **A, double *B, int n, int i);
+void gaussian_reduce(int i);
 double* gauss_seq(double **A, double *B, int n);
+void gauss_seq2(double **A, double *B, int n);
+int n = 4;
+double **A;
+double *B, *y;
 
 struct gauss_arg {
-	double **A;
-	double *B;
-	int n;
-	int i;
+	int k;
 };
 
 int main()
 {
 	int range = 1000;
 	int i, j;
-	int n = 5;
 
-	double **A = (double **) malloc(n * sizeof(double *));
-	double *B = (double *) malloc(n * sizeof(double));
+	time_t t;
+	srand((unsigned) time(&t));
+
+	A = (double **) malloc(n * sizeof(double *));
+	B = (double *) malloc(n * sizeof(double));
 	for (i = 0; i < n; i++)
 	{
-		B[i] = (rand() % range);
+		B[i] = ((double)rand() / range);
 		A[i] = (double *) malloc(n * sizeof(double));
 		for (j = 0; j < n; j++)
 		{
-			A[i][j] = (rand() % range);
+			A[i][j] = ((double)rand() / range);
 		}
 	}
 
@@ -50,9 +53,9 @@ int main()
 	{
 		printf("%f\n", B[i]);
 	}
-	
-	double *y = gauss_seq(A, B, n);
-
+	y = (double *) malloc(n * sizeof(double));
+	//double *y = gauss_seq(A, B, n);
+	gaussian_elimination(6);
 	/* print A first */
 	printf("A\n");
 	for (i = 0; i < n; i++)
@@ -79,19 +82,38 @@ int main()
 	//gaussian_elimination(A, B, n, 2);
 }
 
+void gauss_seq2(double **A, double *B, int n)
+{
+	int i, j, k;
+	double c;
+	for (j = 0; j < n-1; j++)
+	{
+		for (i = 1; i < n-1; i++)
+		{
+			if (i > j)
+			{
+				c = A[i][j]/A[j][j];
+				for (k = 0; k < n; k++)
+				{
+					A[i][k] -= c * A[j][k];
+				}
+			}
+		}
+	}
+	
+}
+
 double* gauss_seq(double **A, double *B, int n)
 {
 	int i, j, k;
-	for (i = 0; i < n; i++)
+	for (k = 0; k < n; k++)
 	{
-		for (j = i + 1; j < n; j++)
+		for (j = k + 1; j < n; j++)
 		{
-			printf("1");
-			A[i][j] = A[i][j]/A[i][i];
-			for (k = i + 1; k < n; k++)
+			A[k][j] = A[k][j]/A[k][k];
+			for (i = k + 1; i  < n; i++)
 			{
-				printf("2");
-				A[k][j] -= A[k][i]*A[i][j];
+				A[i][j] -= A[i][k]*A[k][j];
 			}
 		}
 	}
@@ -109,13 +131,13 @@ double* gauss_seq(double **A, double *B, int n)
 	return y;
 }
 
-void gaussian_elimination(double **A, double *B, int n, int num_threads)
+void gaussian_elimination(int num_threads)
 {
 	printf("3");
-	int i;
+	int i,k;
 	int thread_counter = 0;
 	printf("3");
-	pthread_t *threads = (pthread_t *) malloc(n * sizeof(pthread_t));
+	pthread_t *threads;
 	printf("4");	
 	for (i = 0; i < n; i++) {
 		/* make pthread and call function */
@@ -123,17 +145,14 @@ void gaussian_elimination(double **A, double *B, int n, int num_threads)
 		{
 			printf("5");
 			struct gauss_arg* args = (struct gauss_arg *) malloc(sizeof(struct gauss_arg));
-			args->A = A;
-			args->B = B;
-			args->n = n;
-			args->i = i;
+			args->k = i;
 			printf("6");
 			pthread_create(&threads[i], NULL, (void *) gaussian_thread_function, &args);
 			thread_counter++;
 		}
 		else
 		{
-			gaussian_reduce(A, B, n, i);
+			gaussian_reduce(i);
 		}
 	}
 
@@ -143,19 +162,28 @@ void gaussian_elimination(double **A, double *B, int n, int num_threads)
 	{
 		pthread_join(threads[i], NULL);
 	}
+
+	for (k = 0; k < n; k++)
+	{
+		y[k] = B[k]/A[k][k];
+		A[k][k] = 1;
+		for (i = k + 1; i < n; i++)
+		{
+			B[i] -= A[i][k]*y[k];
+			A[i][k] = 0;
+		}
+	}
 }
 
-void gaussian_reduce(double **A, double *B, int n, int i)
+void gaussian_reduce(int k)
 {
-	int j, k;
-	for (j = i + 1; j < n; j++)
+	int j, i;
+	for (j = k + 1; j < n; j++)
 	{
-		printf("1");
-		A[i][j] = A[i][j]/A[i][i];
-		for (k = i + 1; k < n; k++)
+		A[k][j] = A[k][j]/A[k][k];
+		for (i = k + 1; i  < n; i++)
 		{
-			printf("2");
-			A[k][j] -= A[k][i]*A[i][j];
+			A[i][j] -= A[i][k]*A[k][j];
 		}
 	}
 }
@@ -164,7 +192,6 @@ void gaussian_thread_function(void *args)
 {
 	struct gauss_arg *ga = args;
 	printf("7");
-	gaussian_reduce(ga->A, ga->B, ga->n, ga->i);
-	free(ga);
+	gaussian_reduce(ga->k);
 	pthread_exit(NULL);
 }
